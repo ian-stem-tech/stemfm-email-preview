@@ -1,0 +1,88 @@
+@startuml
+
+actor User
+participant BE
+database StripeCustomers as "Stripe\nCustomers"
+participant Cognito
+participant Stripe
+
+
+== Login/Create Account/Forgot Password (Hosted UI) ==
+User -> Cognito: Login via hosted UI\n(https://sycamore-nonprod.auth.us-west-2.amazoncognito.com/oauth2/authorize)
+
+Cognito -> User: JWT
+
+
+== Login (via API direct) ==
+
+User -> BE: POST /accounts/login
+BE -> Cognito: Initiate auth session\n(with username & password)
+Cognito -> BE: User session details
+BE -> User: JWT
+
+== Subscribe (POST /accounts/subscribe) ==
+User -> BE: POST /accounts/subscribe (JWT header)
+alt JWT provided
+
+    BE -> Cognito: Verify token
+    Cognito -> BE: Valid
+    BE -> StripeCustomers: Lookup cognito id
+    StripeCustomers -> BE: stripe customer id
+    BE -> Stripe: Create checkout session\n(set client_reference_id = cognito_user_id)
+
+else No auth (email provided)
+
+    BE -> Cognito: Ensure email unused
+    Cognito -> BE: No account
+    BE -> Stripe: Create checkout session\n(set client_reference_id = email)
+
+end
+
+Stripe -> BE: Checkout session
+BE -> User: Checkout URL
+User -> Stripe: Checkout
+...User completes checkout...
+Stripe -> User: Success
+group customer.subscription.created Webhook
+    Stripe -> BE: Webhook event: customer.subscription.created
+end
+group customer.subscription.updated Webhook
+    Stripe -> BE: Webhook event: customer.subscription.updated
+end
+group checkout.session.completed Webhook
+    Stripe -> BE: Webhook event: checkout.session.completed
+    alt No account already
+
+        BE -> Cognito: Create account\n(username = client_reference_id)
+        Cognito -> User: Email login details
+
+    end
+    BE -> StripeCustomers: Store cognito <-> stripe\ncustomer map
+    BE -> Cognito: Add user to subscribers group
+end
+group Other Webhooks
+    Stripe -> BE: Webhook event: ...
+    Stripe -> BE: Webhook event: ...
+    Stripe -> BE: Webhook event: ...
+end
+
+
+
+== Manage Subscription (GET /accounts/subscription) ==
+
+User -> BE: GET /accounts/subscription (JWT header)
+BE -> StripeCustomers: Lookup cognito id
+StripeCustomers -> BE: Stripe customer id
+BE -> Stripe: Create portal session
+Stripe -> BE: Portal session
+BE -> User: Portal URL
+User -> Stripe: Manage
+...User makes subscription changes...
+Stripe -> User: Changes
+group Webhooks
+    Stripe -> BE: Webhook event: customer.subscription.updated
+    Stripe -> BE: Webhook event: ...
+end
+
+
+@enduml

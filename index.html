@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StemFM Email Preview</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --border: #222;
+    --text: #9D9D9D;
+    --text-dim: #555;
+    --accent: #fff;
+    --radius: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  select {
+    appearance: none;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 32px 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239D9D9D'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    min-width: 180px;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: var(--text);
+  }
+
+  .toggle-group {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .toggle-btn {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: none;
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .toggle-btn:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  .toggle-btn.active {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .env-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .env-btn {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: none;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .env-btn:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  .env-btn.active {
+    background: #1a1a1a;
+    color: var(--accent);
+  }
+
+  .preview-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 32px;
+    overflow: auto;
+    background: var(--bg);
+  }
+
+  .device-frame {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transition: width 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 140px);
+  }
+
+  .device-frame.desktop {
+    width: 680px;
+  }
+
+  .device-frame.mobile {
+    width: 375px;
+  }
+
+  .frame-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 8px 12px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #333;
+  }
+
+  .frame-label {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .frame-size {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  iframe {
+    width: 100%;
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    background: #fff;
+    min-height: 500px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      width: 260px;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      padding: 12px 0;
+    }
+
+    .sidebar-item {
+      padding: 10px 20px;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+      border-left: 2px solid transparent;
+    }
+
+    .sidebar-item:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .sidebar-item.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: var(--surface);
+    }
+
+    .preview-area {
+      flex: 1;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">StemFM Emails</div>
+  <div class="controls">
+    <select id="template-select"></select>
+    <div class="env-toggle">
+      <button class="env-btn active" data-env="production">Production</button>
+      <button class="env-btn" data-env="staging">Staging</button>
+    </div>
+    <div class="toggle-group">
+      <button class="toggle-btn active" data-view="desktop">Desktop</button>
+      <button class="toggle-btn" data-view="mobile">Mobile</button>
+    </div>
+  </div>
+</header>
+
+<div class="main-layout">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="preview-area">
+    <div class="device-frame desktop" id="device-frame">
+      <div class="frame-bar">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="frame-label" id="frame-label"></span>
+        <span class="frame-size" id="frame-size">680px</span>
+      </div>
+      <iframe id="preview" sandbox="allow-same-origin"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const select = document.getElementById('template-select');
+  const sidebar = document.getElementById('sidebar');
+  const frame = document.getElementById('device-frame');
+  const iframe = document.getElementById('preview');
+  const frameLabel = document.getElementById('frame-label');
+  const frameSize = document.getElementById('frame-size');
+  const viewBtns = document.querySelectorAll('.toggle-btn');
+  const envBtns = document.querySelectorAll('.env-btn');
+
+  let currentView = 'desktop';
+  let currentEnv = 'production';
+  let currentTemplate = '';
+
+  function humanName(filename) {
+    return filename
+      .replace('.html', '')
+      .replace(/-/g, ' ');
+  }
+
+  function loadTemplate() {
+    if (!currentTemplate) return;
+    const src = 'emails/' + currentEnv + '/' + currentTemplate;
+    iframe.src = src;
+    frameLabel.textContent = humanName(currentTemplate);
+
+    document.querySelectorAll('.sidebar-item').forEach(function (el) {
+      el.classList.toggle('active', el.dataset.name === currentTemplate);
+    });
+    select.value = currentTemplate;
+  }
+
+  function setView(view) {
+    currentView = view;
+    viewBtns.forEach(function (b) {
+      b.classList.toggle('active', b.dataset.view === view);
+    });
+    if (view === 'desktop') {
+      frame.classList.remove('mobile');
+      frame.classList.add('desktop');
+      frameSize.textContent = '680px';
+    } else {
+      frame.classList.remove('desktop');
+      frame.classList.add('mobile');
+      frameSize.textContent = '375px';
+    }
+  }
+
+  function setEnv(env) {
+    currentEnv = env;
+    envBtns.forEach(function (b) {
+      b.classList.toggle('active', b.dataset.env === env);
+    });
+    loadTemplate();
+  }
+
+  viewBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setView(btn.dataset.view);
+    });
+  });
+
+  envBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setEnv(btn.dataset.env);
+    });
+  });
+
+  select.addEventListener('change', function () {
+    currentTemplate = select.value;
+    loadTemplate();
+  });
+
+  fetch('emails/manifest.json')
+    .then(function (r) { return r.json(); })
+    .then(function (templates) {
+      templates.forEach(function (name) {
+        var opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = humanName(name);
+        select.appendChild(opt);
+
+        var item = document.createElement('div');
+        item.className = 'sidebar-item';
+        item.textContent = humanName(name);
+        item.dataset.name = name;
+        item.addEventListener('click', function () {
+          currentTemplate = name;
+          loadTemplate();
+        });
+        sidebar.appendChild(item);
+      });
+
+      var initial = templates.indexOf('waitlist-confirmation.html');
+      currentTemplate = templates[initial >= 0 ? initial : 0];
+      loadTemplate();
+    });
+})();
+</script>
+</body>
+</html>

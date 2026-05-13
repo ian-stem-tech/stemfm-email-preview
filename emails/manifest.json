@@ -1,0 +1,22 @@
+[
+  "activate-account.html",
+  "activate-artist-account.html",
+  "activate-invite-code-artist-account.html",
+  "activate-kano-invited-artist-account.html",
+  "alpha-preview-invite.html",
+  "confirm-delete-account.html",
+  "forgot-password.html",
+  "general-campaign-signup.html",
+  "general-purchase-activate-account.html",
+  "general-purchase-no-account.html",
+  "general-purchase-verified-account.html",
+  "password-changed.html",
+  "stem2-purchase-confirmation.html",
+  "stemplayer-purchase-activate-account.html",
+  "stemplayer-purchase-no-account.html",
+  "stemplayer-purchase-verified-account.html",
+  "subscription-cancellation-survey.html",
+  "update-email.html",
+  "waitlist-confirmation.html",
+  "welcome-email.html"
+]
